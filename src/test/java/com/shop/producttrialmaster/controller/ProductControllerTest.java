@@ -34,9 +34,14 @@ class ProductControllerTest {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // /products exige maintenant un token valide : on en génère un directement via JwtUtil pour les tests
+    // Utilisateur authentifié classique : peut lire, mais pas écrire (Étape 6)
     private String bearerToken() {
         return "Bearer " + jwtUtil.generateToken("user@example.com");
+    }
+
+    // Seul admin@admin.com peut créer/modifier/supprimer un produit
+    private String adminBearerToken() {
+        return "Bearer " + jwtUtil.generateToken("admin@admin.com");
     }
 
     private Product.ProductBuilder validProduct() {
@@ -81,11 +86,11 @@ class ProductControllerTest {
     }
 
     @Test
-    void create_returns201_whenProductIsValid() throws Exception {
+    void create_returns201_whenAdmin() throws Exception {
         Product product = validProduct().build();
 
         mockMvc.perform(post("/products")
-                        .header(HttpHeaders.AUTHORIZATION, bearerToken())
+                        .header(HttpHeaders.AUTHORIZATION, adminBearerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(product)))
                 .andExpect(status().isCreated())
@@ -93,21 +98,65 @@ class ProductControllerTest {
     }
 
     @Test
+    void create_returns403_whenUserIsNotAdmin() throws Exception {
+        Product product = validProduct().build();
+
+        mockMvc.perform(post("/products")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(product)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void create_returns400_whenNameIsMissing() throws Exception {
         Product invalid = validProduct().name(null).build();
 
         mockMvc.perform(post("/products")
-                        .header(HttpHeaders.AUTHORIZATION, bearerToken())
+                        .header(HttpHeaders.AUTHORIZATION, adminBearerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void delete_returns204() throws Exception {
+    void update_returns200_whenAdmin() throws Exception {
+        Product saved = productRepository.save(validProduct().build());
+        Product updated = validProduct().name("Chaise modifiée").build();
+
+        mockMvc.perform(put("/products/" + saved.getId())
+                        .header(HttpHeaders.AUTHORIZATION, adminBearerToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updated)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Chaise modifiée"));
+    }
+
+    @Test
+    void update_returns403_whenUserIsNotAdmin() throws Exception {
+        Product saved = productRepository.save(validProduct().build());
+        Product updated = validProduct().name("Chaise modifiée").build();
+
+        mockMvc.perform(put("/products/" + saved.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updated)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_returns204_whenAdmin() throws Exception {
+        Product saved = productRepository.save(validProduct().build());
+
+        mockMvc.perform(delete("/products/" + saved.getId()).header(HttpHeaders.AUTHORIZATION, adminBearerToken()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void delete_returns403_whenUserIsNotAdmin() throws Exception {
         Product saved = productRepository.save(validProduct().build());
 
         mockMvc.perform(delete("/products/" + saved.getId()).header(HttpHeaders.AUTHORIZATION, bearerToken()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isForbidden());
     }
 }
