@@ -52,6 +52,9 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "Accès réservé à l'administrateur")))
                 .authorizeHttpRequests(auth -> auth
+                        // Requêtes de préflight CORS (OPTIONS) : le navigateur les envoie sans le token JWT,
+                        // donc elles doivent être ouvertes, sinon elles échouent avant même la vraie requête
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/account", "/token").permitAll()
                         // Sans ça, le forward interne de Spring Boot vers /error (pour construire une réponse
                         // d'erreur, ex. 409/500) est lui-même bloqué par la sécurité et masqué en 401
