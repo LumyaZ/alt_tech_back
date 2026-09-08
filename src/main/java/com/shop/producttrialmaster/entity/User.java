@@ -1,5 +1,6 @@
 package com.shop.producttrialmaster.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -40,8 +41,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Stocké hashé (BCrypt)
+    // Stocké hashé (BCrypt), @JsonIgnore : ne doit jamais sortir dans une réponse JSON,
+    // même si User est un jour sérialisé directement (ex. via une relation depuis Cart)
     @NotBlank
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 }
