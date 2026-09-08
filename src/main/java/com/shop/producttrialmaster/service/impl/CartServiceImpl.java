@@ -59,4 +59,21 @@ public class CartServiceImpl implements CartService {
         Cart cart = Cart.builder().user(user).build();
         return cartRepository.save(cart);
     }
+
+	@Override
+	public Cart updateItemQuantity(String email, Long productId, Integer quantity) {
+		
+        Cart cart = getCart(email);
+
+        if (quantity == 0) {
+            cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+        } else {
+            cart.getItems().stream()
+                    .filter(item -> item.getProduct().getId().equals(productId))
+                    .findFirst()
+                    .ifPresent(item -> item.setQuantity(quantity));
+        }
+
+        return cartRepository.save(cart);
+	}
 }

@@ -21,4 +21,10 @@ public interface CartService {
      * Removes a product from the cart.
      */
     Cart removeItem(String email, Long productId);
+
+    /**
+     * Fixe la quantité d'un produit dans le panier (le retire si la quantité tombe à 0).
+     * Sets a product's quantity in the cart (removes it if quantity reaches 0).
+     */
+    Cart updateItemQuantity(String email, Long productId, Integer quantity);
 }
