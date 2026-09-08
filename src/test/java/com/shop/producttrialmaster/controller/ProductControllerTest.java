@@ -3,10 +3,12 @@ package com.shop.producttrialmaster.controller;
 import tools.jackson.databind.ObjectMapper;
 import com.shop.producttrialmaster.entity.Product;
 import com.shop.producttrialmaster.repository.ProductRepository;
+import com.shop.producttrialmaster.security.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,14 @@ class ProductControllerTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // /products exige maintenant un token valide : on en génère un directement via JwtUtil pour les tests
+    private String bearerToken() {
+        return "Bearer " + jwtUtil.generateToken("user@example.com");
+    }
+
     private Product.ProductBuilder validProduct() {
         return Product.builder()
                 .code("C001")
@@ -44,23 +54,29 @@ class ProductControllerTest {
     void findAll_returnsListOfProducts() throws Exception {
         productRepository.save(validProduct().build());
 
-        mockMvc.perform(get("/products"))
+        mockMvc.perform(get("/products").header(HttpHeaders.AUTHORIZATION, bearerToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Chaise"));
+    }
+
+    @Test
+    void findAll_returns401_whenNoTokenProvided() throws Exception {
+        mockMvc.perform(get("/products"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void findById_returnsProduct() throws Exception {
         Product saved = productRepository.save(validProduct().build());
 
-        mockMvc.perform(get("/products/" + saved.getId()))
+        mockMvc.perform(get("/products/" + saved.getId()).header(HttpHeaders.AUTHORIZATION, bearerToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Chaise"));
     }
 
     @Test
     void findById_returns404_whenProductDoesNotExist() throws Exception {
-        mockMvc.perform(get("/products/999999"))
+        mockMvc.perform(get("/products/999999").header(HttpHeaders.AUTHORIZATION, bearerToken()))
                 .andExpect(status().isNotFound());
     }
 
@@ -69,6 +85,7 @@ class ProductControllerTest {
         Product product = validProduct().build();
 
         mockMvc.perform(post("/products")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(product)))
                 .andExpect(status().isCreated())
@@ -80,6 +97,7 @@ class ProductControllerTest {
         Product invalid = validProduct().name(null).build();
 
         mockMvc.perform(post("/products")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest());
@@ -89,7 +107,7 @@ class ProductControllerTest {
     void delete_returns204() throws Exception {
         Product saved = productRepository.save(validProduct().build());
 
-        mockMvc.perform(delete("/products/" + saved.getId()))
+        mockMvc.perform(delete("/products/" + saved.getId()).header(HttpHeaders.AUTHORIZATION, bearerToken()))
                 .andExpect(status().isNoContent());
     }
 }
