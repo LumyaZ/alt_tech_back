@@ -33,12 +33,10 @@ class ProductControllerTest {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // Utilisateur authentifié -> peut lire, mais pas écrire
     private String bearerToken() {
         return "Bearer " + jwtUtil.generateToken("user@example.com");
     }
 
-    // Seul admin@admin.com peut créer/modifier/supprimer un produit
     private String adminBearerToken() {
         return "Bearer " + jwtUtil.generateToken("admin@admin.com");
     }
