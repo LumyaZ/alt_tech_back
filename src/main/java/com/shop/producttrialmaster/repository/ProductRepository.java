@@ -8,5 +8,4 @@ import com.shop.producttrialmaster.entity.Product;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    //fournit déjà tout le crud de BASE (findById/findAll/save/deleteById)
 }

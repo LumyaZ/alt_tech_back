@@ -19,6 +19,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
+    /**
+     * Authentifie la requête si un token JWT valide est présent, sinon la laisse passer telle quelle.
+     * Authenticates the request if a valid JWT is present, otherwise lets it through as-is.
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                      HttpServletResponse response,

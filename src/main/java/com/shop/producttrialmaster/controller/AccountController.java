@@ -16,6 +16,10 @@ public class AccountController {
 
     private final UserService userService;
 
+    /**
+     * Crée un nouveau compte utilisateur, mot de passe hashé.
+     * Creates a new user account, with a hashed password.
+     */
     @PostMapping("/account")
     @ResponseStatus(HttpStatus.CREATED)
     public void createAccount(@Valid @RequestBody AccountRequest request) {

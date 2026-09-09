@@ -25,14 +25,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // Email en dur plutôt qu'un rôle : le sujet demande explicitement une solution
-    // simple, sans gestion des accès basée sur les rôles.
+
     private static final String ADMIN_EMAIL = "admin@admin.com";
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // Réutilisable sur n'importe quelle route à réserver à l'admin : compare juste
-    // l'email posé comme principal par JwtAuthenticationFilter.
     private static AuthorizationManager<RequestAuthorizationContext> isAdmin() {
         return (authentication, context) ->
                 new AuthorizationDecision(ADMIN_EMAIL.equals(authentication.get().getName()));
@@ -47,20 +44,15 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) ->
                                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
-                        // Non-admin sur une route d'écriture : 403 avec un message clair plutôt
-                        // que la page HTML générique par défaut de Spring Security
+
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "Accès réservé à l'administrateur")))
                 .authorizeHttpRequests(auth -> auth
-                        // Requêtes de préflight CORS (OPTIONS) : le navigateur les envoie sans le token JWT,
-                        // donc elles doivent être ouvertes, sinon elles échouent avant même la vraie requête
+
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/account", "/token").permitAll()
-                        // Sans ça, le forward interne de Spring Boot vers /error (pour construire une réponse
-                        // d'erreur, ex. 409/500) est lui-même bloqué par la sécurité et masqué en 401
+                        
                         .requestMatchers("/error").permitAll()
-                        // Écriture sur /products réservée à l'admin ; la lecture (GET) reste ouverte
-                        // à tout utilisateur authentifié, couverte par la règle .anyRequest() ci-dessous
                         .requestMatchers(HttpMethod.POST, "/products").access(isAdmin())
                         .requestMatchers(HttpMethod.PUT, "/products/**").access(isAdmin())
                         .requestMatchers(HttpMethod.DELETE, "/products/**").access(isAdmin())
@@ -74,8 +66,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Autorise le front Angular (dev server) à appeler l'API depuis le navigateur ;
-    // sans ça, toute requête cross-origin est bloquée par le navigateur avant même d'atteindre le serveur
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

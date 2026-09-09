@@ -9,5 +9,9 @@ import java.util.Optional;
 @Repository
 public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
 
+    /**
+     * Trouve la liste d'envie associée à l'email de l'utilisateur (traverse la relation Wishlist -> User).
+     * Finds the wishlist associated with the user's email (traverses the Wishlist -> User relation).
+     */
     Optional<Wishlist> findByUserEmail(String email);
 }

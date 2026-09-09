@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,7 +20,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class User {
 
     @Id
@@ -41,8 +39,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Stocké hashé (BCrypt), @JsonIgnore : ne doit jamais sortir dans une réponse JSON,
-    // même si User est un jour sérialisé directement (ex. via une relation depuis Cart)
+    // Stocké hashé (BCrypt)
     @NotBlank
     @Column(nullable = false)
     @JsonIgnore

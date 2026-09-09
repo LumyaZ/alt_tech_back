@@ -45,28 +45,32 @@ class CartControllerTest {
     private JwtUtil jwtUtil;
 
     private String createUserAndGetToken(String email) {
-        userRepository.save(User.builder()
-                .username("jdoe")
-                .firstname("John")
-                .email(email)
-                .password(passwordEncoder.encode("secret123"))
-                .build());
+        User user = new User();
+        user.setUsername("jdoe");
+        user.setFirstname("John");
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode("secret123"));
+        userRepository.save(user);
         return "Bearer " + jwtUtil.generateToken(email);
     }
 
     private Long createProduct() {
-        Product product = productRepository.save(Product.builder()
-                .code("C001")
-                .name("Chaise")
-                .description("Une chaise")
-                .category("Mobilier")
-                .price(49.99)
-                .quantity(10)
-                .internalReference("REF001")
-                .build());
+        Product product = new Product();
+        product.setCode("C001");
+        product.setName("Chaise");
+        product.setDescription("Une chaise");
+        product.setCategory("Mobilier");
+        product.setPrice(49.99);
+        product.setQuantity(10);
+        product.setInternalReference("REF001");
+        productRepository.save(product);
         return product.getId();
     }
 
+    /**
+     * Panier vide créé automatiquement au premier accès.
+     * Empty cart auto-created on first access.
+     */
     @Test
     void getCart_returnsEmptyCart_whenNoneExistsYet() throws Exception {
         String token = createUserAndGetToken("user1@example.com");
@@ -76,6 +80,10 @@ class CartControllerTest {
                 .andExpect(jsonPath("$.items").isEmpty());
     }
 
+    /**
+     * Ajoute un produit au panier.
+     * Adds a product to the cart.
+     */
     @Test
     void addItem_addsProductToCart() throws Exception {
         String token = createUserAndGetToken("user2@example.com");
@@ -90,6 +98,10 @@ class CartControllerTest {
                 .andExpect(jsonPath("$.items[0].quantity").value(2));
     }
 
+    /**
+     * Rejette une requête sans productId.
+     * Rejects a request missing productId.
+     */
     @Test
     void addItem_returns400_whenProductIdIsMissing() throws Exception {
         String token = createUserAndGetToken("user3@example.com");
@@ -101,6 +113,10 @@ class CartControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * Retire un produit du panier.
+     * Removes a product from the cart.
+     */
     @Test
     void removeItem_removesProductFromCart() throws Exception {
         String token = createUserAndGetToken("user4@example.com");
@@ -116,6 +132,10 @@ class CartControllerTest {
                 .andExpect(jsonPath("$.items").isEmpty());
     }
 
+    /**
+     * Sans token, accès refusé.
+     * Without a token, access is denied.
+     */
     @Test
     void getCart_returns401_whenNoToken() throws Exception {
         mockMvc.perform(get("/cart"))

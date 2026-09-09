@@ -10,6 +10,9 @@ import com.shop.producttrialmaster.service.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Iterator;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class WishlistServiceImpl implements WishlistService {
@@ -20,17 +23,23 @@ public class WishlistServiceImpl implements WishlistService {
 
     @Override
     public Wishlist getWishlist(String email) {
-        return wishlistRepository.findByUserEmail(email)
-                .orElseGet(() -> createWishlistForUser(email));
+        Optional<Wishlist> wishlistOptional = wishlistRepository.findByUserEmail(email);
+        if (wishlistOptional.isEmpty()) {
+            return createWishlistForUser(email);
+        }
+        return wishlistOptional.get();
     }
 
     @Override
     public Wishlist addProduct(String email, Long productId) {
         Wishlist wishlist = getWishlist(email);
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable : " + productId));
 
-        wishlist.getProducts().add(product);
+        Optional<Product> productOptional = productRepository.findById(productId);
+        if (productOptional.isEmpty()) {
+            throw new IllegalArgumentException("Produit introuvable : " + productId);
+        }
+
+        wishlist.getProducts().add(productOptional.get());
 
         return wishlistRepository.save(wishlist);
     }
@@ -38,14 +47,25 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     public Wishlist removeProduct(String email, Long productId) {
         Wishlist wishlist = getWishlist(email);
-        wishlist.getProducts().removeIf(product -> product.getId().equals(productId));
+
+        Iterator<Product> iterator = wishlist.getProducts().iterator();
+        while (iterator.hasNext()) {
+            Product product = iterator.next();
+            if (product.getId().equals(productId)) {
+                iterator.remove();
+            }
+        }
+
         return wishlistRepository.save(wishlist);
     }
 
     private Wishlist createWishlistForUser(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable : " + email));
-        Wishlist wishlist = Wishlist.builder().user(user).build();
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("Utilisateur introuvable : " + email);
+        }
+        Wishlist wishlist = new Wishlist();
+        wishlist.setUser(userOptional.get());
         return wishlistRepository.save(wishlist);
     }
 }

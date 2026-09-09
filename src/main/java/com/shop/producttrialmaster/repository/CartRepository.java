@@ -9,5 +9,9 @@ import java.util.Optional;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
 
+    /**
+     * Trouve le panier associé à l'email de l'utilisateur (traverse la relation Cart -> User).
+     * Finds the cart associated with the user's email (traverses the Cart -> User relation).
+     */
     Optional<Cart> findByUserEmail(String email);
 }

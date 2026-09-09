@@ -34,9 +34,16 @@ class CartServiceImplTest {
     @InjectMocks
     private CartServiceImpl cartService;
 
+    /**
+     * Crée un panier vide si l'utilisateur n'en a pas.
+     * Creates an empty cart if the user has none.
+     */
     @Test
     void getCart_createsEmptyCart_whenNoneExists() {
-        User user = User.builder().id(1L).email("user@example.com").build();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+
         when(cartRepository.findByUserEmail("user@example.com")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -47,11 +54,23 @@ class CartServiceImplTest {
         assertThat(cart.getItems()).isEmpty();
     }
 
+    /**
+     * Ajoute un nouvel article si le produit n'est pas déjà dans le panier.
+     * Adds a new item if the product isn't already in the cart.
+     */
     @Test
     void addItem_addsNewItem_whenProductNotAlreadyInCart() {
-        User user = User.builder().id(1L).email("user@example.com").build();
-        Cart cart = Cart.builder().id(1L).user(user).build();
-        Product product = Product.builder().id(10L).name("Chaise").build();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+
+        Cart cart = new Cart();
+        cart.setId(1L);
+        cart.setUser(user);
+
+        Product product = new Product();
+        product.setId(10L);
+        product.setName("Chaise");
 
         when(cartRepository.findByUserEmail("user@example.com")).thenReturn(Optional.of(cart));
         when(productRepository.findById(10L)).thenReturn(Optional.of(product));
@@ -63,12 +82,29 @@ class CartServiceImplTest {
         assertThat(result.getItems().get(0).getQuantity()).isEqualTo(2);
     }
 
+    /**
+     * Incrémente la quantité si le produit est déjà dans le panier.
+     * Increments the quantity if the product is already in the cart.
+     */
     @Test
     void addItem_incrementsQuantity_whenProductAlreadyInCart() {
-        User user = User.builder().id(1L).email("user@example.com").build();
-        Product product = Product.builder().id(10L).name("Chaise").build();
-        Cart cart = Cart.builder().id(1L).user(user).build();
-        cart.getItems().add(CartItem.builder().cart(cart).product(product).quantity(1).build());
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+
+        Product product = new Product();
+        product.setId(10L);
+        product.setName("Chaise");
+
+        Cart cart = new Cart();
+        cart.setId(1L);
+        cart.setUser(user);
+
+        CartItem existingItem = new CartItem();
+        existingItem.setCart(cart);
+        existingItem.setProduct(product);
+        existingItem.setQuantity(1);
+        cart.getItems().add(existingItem);
 
         when(cartRepository.findByUserEmail("user@example.com")).thenReturn(Optional.of(cart));
         when(productRepository.findById(10L)).thenReturn(Optional.of(product));
@@ -80,12 +116,28 @@ class CartServiceImplTest {
         assertThat(result.getItems().get(0).getQuantity()).isEqualTo(4);
     }
 
+    /**
+     * Retire le produit correspondant du panier.
+     * Removes the matching product from the cart.
+     */
     @Test
     void removeItem_removesMatchingProduct() {
-        User user = User.builder().id(1L).email("user@example.com").build();
-        Product product = Product.builder().id(10L).build();
-        Cart cart = Cart.builder().id(1L).user(user).build();
-        cart.getItems().add(CartItem.builder().cart(cart).product(product).quantity(1).build());
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+
+        Product product = new Product();
+        product.setId(10L);
+
+        Cart cart = new Cart();
+        cart.setId(1L);
+        cart.setUser(user);
+
+        CartItem item = new CartItem();
+        item.setCart(cart);
+        item.setProduct(product);
+        item.setQuantity(1);
+        cart.getItems().add(item);
 
         when(cartRepository.findByUserEmail("user@example.com")).thenReturn(Optional.of(cart));
         when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));

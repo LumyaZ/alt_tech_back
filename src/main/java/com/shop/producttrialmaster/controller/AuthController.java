@@ -15,6 +15,10 @@ public class AuthController {
 
     private final UserService userService;
 
+    /**
+     * Vérifie l'email/mot de passe et renvoie un token JWT si valide.
+     * Verifies email/password and returns a JWT token if valid.
+     */
     @PostMapping("/token")
     public TokenResponse login(@Valid @RequestBody TokenRequest request) {
         String token = userService.authenticate(request);

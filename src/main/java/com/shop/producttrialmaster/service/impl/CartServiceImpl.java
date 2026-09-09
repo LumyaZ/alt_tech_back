@@ -11,6 +11,9 @@ import com.shop.producttrialmaster.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Iterator;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
@@ -21,27 +24,33 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Cart getCart(String email) {
-        return cartRepository.findByUserEmail(email)
-                .orElseGet(() -> createCartForUser(email));
+        Optional<Cart> cartOptional = cartRepository.findByUserEmail(email);
+        if (cartOptional.isEmpty()) {
+            return createCartForUser(email);
+        }
+        return cartOptional.get();
     }
 
     @Override
     public Cart addItem(String email, Long productId, Integer quantity) {
         Cart cart = getCart(email);
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable : " + productId));
 
-        cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .findFirst()
-                .ifPresentOrElse(
-                        item -> item.setQuantity(item.getQuantity() + quantity),
-                        () -> cart.getItems().add(CartItem.builder()
-                                .cart(cart)
-                                .product(product)
-                                .quantity(quantity)
-                                .build())
-                );
+        Optional<Product> productOptional = productRepository.findById(productId);
+        if (productOptional.isEmpty()) {
+            throw new IllegalArgumentException("Produit introuvable : " + productId);
+        }
+        Product product = productOptional.get();
+
+        CartItem existingItem = findItemByProductId(cart, productId);
+        if (existingItem != null) {
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+        } else {
+            CartItem newItem = new CartItem();
+            newItem.setCart(cart);
+            newItem.setProduct(product);
+            newItem.setQuantity(quantity);
+            cart.getItems().add(newItem);
+        }
 
         return cartRepository.save(cart);
     }
@@ -49,31 +58,60 @@ public class CartServiceImpl implements CartService {
     @Override
     public Cart removeItem(String email, Long productId) {
         Cart cart = getCart(email);
-        cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+        removeItemByProductId(cart, productId);
+        return cartRepository.save(cart);
+    }
+
+    @Override
+    public Cart updateItemQuantity(String email, Long productId, Integer quantity) {
+        Cart cart = getCart(email);
+
+        if (quantity == 0) {
+            removeItemByProductId(cart, productId);
+        } else {
+            CartItem existingItem = findItemByProductId(cart, productId);
+            if (existingItem != null) {
+                existingItem.setQuantity(quantity);
+            }
+        }
+
         return cartRepository.save(cart);
     }
 
     private Cart createCartForUser(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable : " + email));
-        Cart cart = Cart.builder().user(user).build();
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("Utilisateur introuvable : " + email);
+        }
+        Cart cart = new Cart();
+        cart.setUser(userOptional.get());
         return cartRepository.save(cart);
     }
 
-	@Override
-	public Cart updateItemQuantity(String email, Long productId, Integer quantity) {
-		
-        Cart cart = getCart(email);
-
-        if (quantity == 0) {
-            cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
-        } else {
-            cart.getItems().stream()
-                    .filter(item -> item.getProduct().getId().equals(productId))
-                    .findFirst()
-                    .ifPresent(item -> item.setQuantity(quantity));
+    /**
+     * Cherche la ligne de panier correspondant au produit, null si absente.
+     * Finds the cart line matching the product, null if absent.
+     */
+    private CartItem findItemByProductId(Cart cart, Long productId) {
+        for (CartItem item : cart.getItems()) {
+            if (item.getProduct().getId().equals(productId)) {
+                return item;
+            }
         }
+        return null;
+    }
 
-        return cartRepository.save(cart);
-	}
+    /**
+     * Retire la ligne de panier correspondant au produit, si elle existe.
+     * Removes the cart line matching the product, if present.
+     */
+    private void removeItemByProductId(Cart cart, Long productId) {
+        Iterator<CartItem> iterator = cart.getItems().iterator();
+        while (iterator.hasNext()) {
+            CartItem item = iterator.next();
+            if (item.getProduct().getId().equals(productId)) {
+                iterator.remove();
+            }
+        }
+    }
 }

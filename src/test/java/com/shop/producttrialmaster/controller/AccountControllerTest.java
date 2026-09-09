@@ -32,6 +32,10 @@ class AccountControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * Crée un compte et vérifie que le mot de passe est bien hashé.
+     * Creates an account and checks the password is hashed.
+     */
     @Test
     void createAccount_returns201_andStoresHashedPassword() throws Exception {
         Map<String, String> payload = Map.of(
@@ -51,6 +55,10 @@ class AccountControllerTest {
         assertThat(saved.get().getPassword()).isNotEqualTo("secret123");
     }
 
+    /**
+     * Rejette un email mal formé.
+     * Rejects a malformed email.
+     */
     @Test
     void createAccount_returns400_whenEmailIsInvalid() throws Exception {
         Map<String, String> payload = Map.of(

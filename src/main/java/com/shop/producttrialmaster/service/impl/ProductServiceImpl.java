@@ -5,9 +5,12 @@ import com.shop.producttrialmaster.entity.Product;
 import com.shop.producttrialmaster.repository.ProductRepository;
 import com.shop.producttrialmaster.service.ProductService;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,15 +20,23 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductDto> findAll() {
-        return productRepository.findAll().stream()
-                .map(this::convertToDto)
-                .toList();
+        List<Product> products = productRepository.findAll();
+
+        List<ProductDto> productsDtos = new ArrayList<>();
+        for (Product product : products) {
+            productsDtos.add(convertToDto(product));
+        }
+
+        return productsDtos;
     }
 
     @Override
     public ProductDto findById(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable : " + id));
+        Optional<Product> productOptional = productRepository.findById(id);
+        if (productOptional.isEmpty()) {
+            throw new IllegalArgumentException("Produit introuvable : " + id);
+        }
+        Product product = productOptional.get();
         return convertToDto(product);
     }
 
@@ -36,8 +47,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDto update(Long id, Product product) {
-        Product existing = productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Produit introuvable : " + id));
+        Optional<Product> existingOptional = productRepository.findById(id);
+        if (existingOptional.isEmpty()) {
+            throw new IllegalArgumentException("Produit introuvable : " + id);
+        }
+        Product existing = existingOptional.get();
+
         existing.setCode(product.getCode());
         existing.setName(product.getName());
         existing.setDescription(product.getDescription());
@@ -57,23 +72,22 @@ public class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
     }
 
-    // Reconvertie à chaque lecture : la seule fonction de mapping conservée (entité -> dto)
     private ProductDto convertToDto(Product product) {
-        return ProductDto.builder()
-                .id(product.getId())
-                .code(product.getCode())
-                .name(product.getName())
-                .description(product.getDescription())
-                .image(product.getImage())
-                .category(product.getCategory())
-                .price(product.getPrice())
-                .quantity(product.getQuantity())
-                .internalReference(product.getInternalReference())
-                .shellId(product.getShellId())
-                .inventoryStatus(product.getInventoryStatus())
-                .rating(product.getRating())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
-                .build();
+        ProductDto dto = new ProductDto();
+        dto.setId(product.getId());
+        dto.setCode(product.getCode());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setImage(product.getImage());
+        dto.setCategory(product.getCategory());
+        dto.setPrice(product.getPrice());
+        dto.setQuantity(product.getQuantity());
+        dto.setInternalReference(product.getInternalReference());
+        dto.setShellId(product.getShellId());
+        dto.setInventoryStatus(product.getInventoryStatus());
+        dto.setRating(product.getRating());
+        dto.setCreatedAt(product.getCreatedAt());
+        dto.setUpdatedAt(product.getUpdatedAt());
+        return dto;
     }
 }

@@ -25,9 +25,16 @@ class ProductServiceImplTest {
     @InjectMocks
     private ProductServiceImpl productService;
 
+    /**
+     * Retourne le DTO quand le produit existe.
+     * Returns the DTO when the product exists.
+     */
     @Test
     void findById_returnsDto_whenProductExists() {
-        Product product = Product.builder().id(1L).name("Chaise").code("C001").build();
+        Product product = new Product();
+        product.setId(1L);
+        product.setName("Chaise");
+        product.setCode("C001");
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
         ProductDto result = productService.findById(1L);
@@ -35,6 +42,10 @@ class ProductServiceImplTest {
         assertThat(result.getName()).isEqualTo("Chaise");
     }
 
+    /**
+     * Lève une exception quand le produit n'existe pas.
+     * Throws an exception when the product doesn't exist.
+     */
     @Test
     void findById_throws_whenProductDoesNotExist() {
         when(productRepository.findById(99L)).thenReturn(Optional.empty());
@@ -43,18 +54,31 @@ class ProductServiceImplTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    /**
+     * Retourne tous les produits sous forme de DTO.
+     * Returns all products as DTOs.
+     */
     @Test
     void findAll_returnsAllProductsAsDto() {
-        when(productRepository.findAll()).thenReturn(List.of(
-                Product.builder().id(1L).name("Chaise").build(),
-                Product.builder().id(2L).name("Table").build()
-        ));
+        Product product1 = new Product();
+        product1.setId(1L);
+        product1.setName("Chaise");
+
+        Product product2 = new Product();
+        product2.setId(2L);
+        product2.setName("Table");
+
+        when(productRepository.findAll()).thenReturn(List.of(product1, product2));
 
         List<ProductDto> result = productService.findAll();
 
         assertThat(result).hasSize(2);
     }
 
+    /**
+     * Appelle bien deleteById sur le repository.
+     * Calls deleteById on the repository.
+     */
     @Test
     void delete_callsRepositoryDeleteById() {
         productService.delete(1L);

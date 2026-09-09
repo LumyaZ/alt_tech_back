@@ -36,14 +36,18 @@ class AuthControllerTest {
     private PasswordEncoder passwordEncoder;
 
     private void createUser(String email, String rawPassword) {
-        userRepository.save(User.builder()
-                .username("jdoe")
-                .firstname("John")
-                .email(email)
-                .password(passwordEncoder.encode(rawPassword))
-                .build());
+        User user = new User();
+        user.setUsername("jdoe");
+        user.setFirstname("John");
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        userRepository.save(user);
     }
 
+    /**
+     * Connexion réussie renvoie un token.
+     * Successful login returns a token.
+     */
     @Test
     void login_returns200_andToken_whenCredentialsAreValid() throws Exception {
         createUser("jdoe@example.com", "secret123");
@@ -57,6 +61,10 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.token").isNotEmpty());
     }
 
+    /**
+     * Mauvais mot de passe rejeté.
+     * Wrong password rejected.
+     */
     @Test
     void login_returns401_whenPasswordIsWrong() throws Exception {
         createUser("jdoe@example.com", "secret123");
@@ -69,6 +77,10 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    /**
+     * Email inconnu rejeté.
+     * Unknown email rejected.
+     */
     @Test
     void login_returns401_whenEmailIsUnknown() throws Exception {
         mockMvc.perform(post("/token")

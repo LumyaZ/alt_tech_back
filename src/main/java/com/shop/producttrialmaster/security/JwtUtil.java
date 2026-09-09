@@ -21,6 +21,10 @@ public class JwtUtil {
         this.expirationMs = expirationMs;
     }
 
+    /**
+     * Génère un token signé contenant l'email et sa date d'expiration.
+     * Generates a signed token containing the email and its expiration date.
+     */
     public String generateToken(String email) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
@@ -32,10 +36,18 @@ public class JwtUtil {
                 .compact();
     }
 
+    /**
+     * Extrait l'email (claim "sub") d'un token valide.
+     * Extracts the email ("sub" claim) from a valid token.
+     */
     public String extractEmail(String token) {
         return parseClaims(token).getSubject();
     }
 
+    /**
+     * Vérifie qu'un token est bien signé, non expiré et lisible.
+     * Checks that a token is properly signed, not expired, and readable.
+     */
     public boolean isTokenValid(String token) {
         try {
             parseClaims(token);
@@ -45,6 +57,10 @@ public class JwtUtil {
         }
     }
 
+    /**
+     * Vérifie la signature et décode le contenu du token.
+     * Verifies the signature and decodes the token's content.
+     */
     private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(key)

@@ -38,28 +38,32 @@ class WishlistControllerTest {
     private JwtUtil jwtUtil;
 
     private String createUserAndGetToken(String email) {
-        userRepository.save(User.builder()
-                .username("jdoe")
-                .firstname("John")
-                .email(email)
-                .password(passwordEncoder.encode("secret123"))
-                .build());
+        User user = new User();
+        user.setUsername("jdoe");
+        user.setFirstname("John");
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode("secret123"));
+        userRepository.save(user);
         return "Bearer " + jwtUtil.generateToken(email);
     }
 
     private Long createProduct() {
-        Product product = productRepository.save(Product.builder()
-                .code("C001")
-                .name("Chaise")
-                .description("Une chaise")
-                .category("Mobilier")
-                .price(49.99)
-                .quantity(10)
-                .internalReference("REF001")
-                .build());
+        Product product = new Product();
+        product.setCode("C001");
+        product.setName("Chaise");
+        product.setDescription("Une chaise");
+        product.setCategory("Mobilier");
+        product.setPrice(49.99);
+        product.setQuantity(10);
+        product.setInternalReference("REF001");
+        productRepository.save(product);
         return product.getId();
     }
 
+    /**
+     * Liste vide créée automatiquement au premier accès.
+     * Empty wishlist auto-created on first access.
+     */
     @Test
     void getWishlist_returnsEmptyWishlist_whenNoneExistsYet() throws Exception {
         String token = createUserAndGetToken("user1@example.com");
@@ -69,6 +73,10 @@ class WishlistControllerTest {
                 .andExpect(jsonPath("$.products").isEmpty());
     }
 
+    /**
+     * Ajoute un produit à la liste d'envie.
+     * Adds a product to the wishlist.
+     */
     @Test
     void addProduct_addsProductToWishlist() throws Exception {
         String token = createUserAndGetToken("user2@example.com");
@@ -79,6 +87,10 @@ class WishlistControllerTest {
                 .andExpect(jsonPath("$.products[0].id").value(productId));
     }
 
+    /**
+     * Retire un produit de la liste d'envie.
+     * Removes a product from the wishlist.
+     */
     @Test
     void removeProduct_removesProductFromWishlist() throws Exception {
         String token = createUserAndGetToken("user3@example.com");
@@ -91,6 +103,10 @@ class WishlistControllerTest {
                 .andExpect(jsonPath("$.products").isEmpty());
     }
 
+    /**
+     * Sans token, accès refusé.
+     * Without a token, access is denied.
+     */
     @Test
     void getWishlist_returns401_whenNoToken() throws Exception {
         mockMvc.perform(get("/wishlist"))

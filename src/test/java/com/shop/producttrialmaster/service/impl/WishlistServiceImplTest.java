@@ -33,9 +33,16 @@ class WishlistServiceImplTest {
     @InjectMocks
     private WishlistServiceImpl wishlistService;
 
+    /**
+     * Crée une liste d'envie vide si l'utilisateur n'en a pas.
+     * Creates an empty wishlist if the user has none.
+     */
     @Test
     void getWishlist_createsEmptyWishlist_whenNoneExists() {
-        User user = User.builder().id(1L).email("user@example.com").build();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+
         when(wishlistRepository.findByUserEmail("user@example.com")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(wishlistRepository.save(any(Wishlist.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -46,11 +53,23 @@ class WishlistServiceImplTest {
         assertThat(wishlist.getProducts()).isEmpty();
     }
 
+    /**
+     * Ajoute un produit à la liste d'envie.
+     * Adds a product to the wishlist.
+     */
     @Test
     void addProduct_addsProductToWishlist() {
-        User user = User.builder().id(1L).email("user@example.com").build();
-        Wishlist wishlist = Wishlist.builder().id(1L).user(user).build();
-        Product product = Product.builder().id(10L).name("Chaise").build();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+
+        Wishlist wishlist = new Wishlist();
+        wishlist.setId(1L);
+        wishlist.setUser(user);
+
+        Product product = new Product();
+        product.setId(10L);
+        product.setName("Chaise");
 
         when(wishlistRepository.findByUserEmail("user@example.com")).thenReturn(Optional.of(wishlist));
         when(productRepository.findById(10L)).thenReturn(Optional.of(product));
@@ -61,11 +80,22 @@ class WishlistServiceImplTest {
         assertThat(result.getProducts()).hasSize(1);
     }
 
+    /**
+     * Retire le produit correspondant de la liste d'envie.
+     * Removes the matching product from the wishlist.
+     */
     @Test
     void removeProduct_removesMatchingProduct() {
-        User user = User.builder().id(1L).email("user@example.com").build();
-        Product product = Product.builder().id(10L).build();
-        Wishlist wishlist = Wishlist.builder().id(1L).user(user).build();
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("user@example.com");
+
+        Product product = new Product();
+        product.setId(10L);
+
+        Wishlist wishlist = new Wishlist();
+        wishlist.setId(1L);
+        wishlist.setUser(user);
         wishlist.getProducts().add(product);
 
         when(wishlistRepository.findByUserEmail("user@example.com")).thenReturn(Optional.of(wishlist));
