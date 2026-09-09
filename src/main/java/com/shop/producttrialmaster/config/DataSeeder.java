@@ -7,6 +7,7 @@ import com.shop.producttrialmaster.repository.ProductRepository;
 import com.shop.producttrialmaster.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -15,8 +16,10 @@ import java.util.List;
 /**
  * Jette des données de démo en base au démarrage (H2 étant en mémoire, elle est vide à chaque redémarrage).
  * Seeds demo data on startup (H2 being in-memory, it's empty on every restart).
+ * Désactivé en profil "test" : les tests d'intégration comptent sur une base vide au départ.
  */
 @Component
+@Profile("!test")
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
